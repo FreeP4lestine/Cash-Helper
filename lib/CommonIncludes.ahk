@@ -76,3 +76,16 @@ ConvertMillimsToDT(Value, Sign := "", Enclose := True) {
 	Pre := (Sign ? Sign " " : "") ValueArr[1] (ValueArr[2] ? "." RTrim(ValueArr[2], 0) : "")
     Return, Enclose ? "[" Pre " DT]" : Pre " DT"
 }
+SetExplorerTheme(HCTL) {
+    If (DllCall("GetVersion", "UChar") > 5) {
+        VarSetCapacity(ClassName, 1024, 0)
+        If DllCall("GetClassName", "Ptr", HCTL, "Str", ClassName, "Int", 512, "Int") {
+            Return !DllCall("UxTheme.dll\SetWindowTheme", "Ptr", HCTL, "WStr", "Explorer", "Ptr", 0)
+        }
+    }
+    Return False
+}
+SetEditCueBanner(HWND, Cue) {
+   Static EM_SETCUEBANNER := (0x1500 + 1)
+   Return DllCall("User32.dll\SendMessageW", "Ptr", HWND, "Uint", EM_SETCUEBANNER, "Ptr", True, "WStr", Cue)
+}

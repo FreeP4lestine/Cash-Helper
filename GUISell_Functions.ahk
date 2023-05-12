@@ -40,30 +40,6 @@ WriteSession() {
     Obj.Close()
 }
 
-SetExplorerTheme(HCTL) {
-    If (DllCall("GetVersion", "UChar") > 5) {
-        VarSetCapacity(ClassName, 1024, 0)
-        If DllCall("GetClassName", "Ptr", HCTL, "Str", ClassName, "Int", 512, "Int") {
-            Return !DllCall("UxTheme.dll\SetWindowTheme", "Ptr", HCTL, "WStr", "Explorer", "Ptr", 0)
-        }
-    }
-    Return False
-}
-
-LoadDefinitions() {
-    Definitions := {}
-    Loop, Files, Sets\Def\*.Def, R
-    {
-        FileRead, Content, % A_LoopFileFullPath
-        Content := StrSplit(Content, ";")
-        Definitions["" StrReplace(A_LoopFileName, ".def") ""] := { "Name"       : Content[1]
-                                                                 , "BuyPrice"   : Content[2]
-                                                                 , "SellPrice"  : Content[3]
-                                                                 , "Quantity"   : Content[4] }
-    }
-    Return, Definitions
-}
-
 CalculateSum() {
     Global AdditionalInfo
     CharSum := 0
@@ -71,17 +47,18 @@ CalculateSum() {
         LV_GetText(ThisCharSum, A_Index, 5)
         CharSum += ThisCharSum
     }
-    If (CharSum) {
-        GuiControlGet, Remise, , Remise
-        CharSumRemise := CharSum
-        If (Remise) && (AdditionalInfo) {
-            CharSumRemise -= Round(Remise / 100 * CharSum)
-        }
-        GuiControl, , ThisListSum, % CharSumRemise " " ConvertMillimsToDT(CharSumRemise)
-        GuiControl, , AllSum, % CharSumRemise
-    } Else {
-        GuiControl, , ThisListSum
-    }
+    GuiControl, , ThisListSum
+    ;If (CharSum) {
+    ;    GuiControlGet, Remise, , Remise
+    ;    CharSumRemise := CharSum
+    ;    If (Remise) && (AdditionalInfo) {
+    ;        CharSumRemise -= Round(Remise / 100 * CharSum)
+    ;    }
+    ;    GuiControl, , ThisListSum, % CharSumRemise " " ConvertMillimsToDT(CharSumRemise)
+    ;    GuiControl, , AllSum, % CharSumRemise
+    ;} Else {
+    ;    GuiControl, , ThisListSum
+    ;}
 }
 
 CartView() {
@@ -152,30 +129,6 @@ CheckLatestSells() {
     }
 }
 
-LogIn(Username, Password) {
-    If (FileExist("Sets\Acc.chu")) {
-        Account := {}
-        FileRead, RawAccount, Sets\Acc.chu
-        TextAccount := b64Decode(RawAccount)
-        
-        For Each, User in StrSplit(TextAccount, ",") {
-            LOG := StrSplit(User, "|")
-            Account[LOG[1]] := [LOG[2], LOG[3], LOG[4]]
-        }
-        
-        If (Account[Username][1] = Password) {
-            If (Account[Username][3]) {
-                UserPic := Account[Username][3]
-            }
-            If (Account[Username][2] = "Admin")
-                Return, 1
-            Else If (Account[Username][2] = "User")
-                Return, 2
-        }
-    }
-    Return, 0
-}
-
 GUISellHistory(Text) {
     FormatTime, OutTime, % A_Now, yyyy/MM/dd HH:mm:ss
     Obj := FileOpen("Hist\SellHistory.Hist", "a")
@@ -201,22 +154,10 @@ FolderSet() {
     }
 }
 
-ThemeAdd() {
-    Loop, 5 {
-        Gui, Add, Text, % "y0 x" 208 + A_Index * 2 " w1 h" A_ScreenHeight " HwndHCtrl"
-        CtlColors.Attach(HCtrl, "7D7D64")
-    }
-}
-
 Message() {
     Global ProdDefs
     FileRead, Message, Sets\Message.Request
     If (Message = "Update_Definitions") {
         ProdDefs := LoadDefinitions()
     }
-}
-
-SetEditCueBanner(HWND, Cue) {
-   Static EM_SETCUEBANNER := (0x1500 + 1)
-   Return DllCall("User32.dll\SendMessageW", "Ptr", HWND, "Uint", EM_SETCUEBANNER, "Ptr", True, "WStr", Cue)
 }
